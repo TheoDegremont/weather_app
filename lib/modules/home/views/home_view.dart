@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:weather_app/config/data/weather_model.dart';
+import 'package:weather_app/modules/home/controllers/weather_controller.dart';
+import 'package:weather_app/modules/home/services/weather_services.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -9,45 +12,80 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  bool isDarkMode = true;
+  final WeatherController weatherController = WeatherController();
+  final WeatherServices _weatherServices = WeatherServices();
+
+  WeatherModel? weatherModel;
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeatherData();
+  }
+
+  Future<void> _fetchWeatherData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final weatherData = await _weatherServices.getWeatherData();
+      setState(() {
+        weatherModel = weatherData;
+        _isLoading = false;
+      });
+    }catch(e){
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    } 
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        backgroundColor:
+            weatherController.isDarkMode ? Colors.black : Colors.white,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           leading: IconButton(
             icon: Icon(
               Icons.location_on,
-              color: isDarkMode ? Colors.white : Colors.black,
+              color: weatherController.isDarkMode ? Colors.white : Colors.black,
             ),
             onPressed: () {},
           ),
           actions: [
             IconButton(
               icon: Icon(
-                isDarkMode ? Icons.wb_sunny : Icons.bedtime,
-                color: isDarkMode ? Colors.white : Colors.black,
+                weatherController.isDarkMode ? Icons.wb_sunny : Icons.bedtime,
+                color:
+                    weatherController.isDarkMode ? Colors.white : Colors.black,
               ),
               onPressed: () {
                 setState(() {
-                  isDarkMode = !isDarkMode;
+                  weatherController.isDarkMode = !weatherController.isDarkMode;
                 });
               },
             ),
           ],
         ),
         body: Center(
-          child: Column(
+          child: _isLoading ? CircularProgressIndicator(): _errorMessage.isNotEmpty ? Center(child: Text(_errorMessage)): weatherModel != null ? Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'San Francisco',
+                weatherModel!.cityName,
                 style: TextStyle(
-                    color: isDarkMode ? Colors.white : Colors.black,
+                    color: weatherController.isDarkMode
+                        ? Colors.white
+                        : Colors.black,
                     fontSize: screenWidth * 0.08,
                     fontWeight: FontWeight.bold),
               ),
@@ -55,18 +93,20 @@ class _HomeViewState extends State<HomeView> {
               SizedBox(
                 width: screenWidth * 0.55,
                 height: screenHeight * 0.25,
-                child: Lottie.asset('assets/images/sun.json'),
+                child: Lottie.asset(weatherController.getWeatherLottie(weatherModel!.weatherCode)),
               ),
               SizedBox(height: screenHeight * 0.02),
               Text(
-                '9°C',
+                '${weatherModel!.temperature.toStringAsFixed(1)}°C',
                 style: TextStyle(
-                    color: isDarkMode ? Colors.white : Colors.black,
+                    color: weatherController.isDarkMode
+                        ? Colors.white
+                        : Colors.black,
                     fontSize: screenWidth * 0.08,
                     fontWeight: FontWeight.bold),
               ),
             ],
-          ),
-        ));
+          
+        ) : const Text('No data')));
   }
 }

@@ -9,11 +9,11 @@ class WeatherModel {
     required this.weatherCode,
   });
 
-  factory WeatherModel.fromJson(Map<String, dynamic> json) {
+  factory WeatherModel.fromJson(Map<String, dynamic> json, String cityName) {
     return WeatherModel(
-      cityName: json['cityName'],
+      cityName: cityName,
       temperature: json['temperature'],
-      weatherCode: json['weatherCode'],
+      weatherCode: json['weathercode']
     );
   }
 
